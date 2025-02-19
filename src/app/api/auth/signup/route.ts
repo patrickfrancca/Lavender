@@ -4,16 +4,16 @@ import User from '../../../models/user';
 import connectToDatabase from '../../../lib/mongodb';
 
 export async function POST(request: Request) {
-    const { name, email, password, confirmPassword } = await request.json();
+    const { name, email, password } = await request.json();
 
-    console.log("Received data:", { name, email, password, confirmPassword });
+    console.log("Received data:", { name, email, password });
 
     const isValidEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     };
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password) {
         console.log("Validation error: All fields are required");
         return NextResponse.json({ message: "All fields are required" }, { status: 400 });
     }
@@ -21,11 +21,6 @@ export async function POST(request: Request) {
     if (!isValidEmail(email)) {
         console.log("Validation error: Invalid email format");
         return NextResponse.json({ message: "Invalid email format" }, { status: 400 });
-    }
-
-    if (confirmPassword !== password) {
-        console.log("Validation error: Passwords do not match");
-        return NextResponse.json({ message: "Passwords do not match" }, { status: 400 });
     }
 
     if (password.length < 6) {
