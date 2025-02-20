@@ -2,6 +2,9 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
+import { toast } from "sonner";
+import { AiOutlineWarning } from "react-icons/ai";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
   const [form, setForm] = useState({
@@ -11,18 +14,28 @@ export default function SignUpPage() {
     confirmPassword: "",
   });
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPending(true);
 
-    await fetch("/api/auth/signup", {
+    const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+    const data = await res.json();
 
-    setPending(false);
+    if (res.ok) {
+      setPending(false);
+      toast.success(data.message);
+      router.push("/sign-in");
+    } else {
+      setError(data.message);
+      setPending(false);
+    }
   };
 
   return (
@@ -34,7 +47,7 @@ export default function SignUpPage() {
           loop
           muted
           className="w-full h-full object-cover"
-          src="https://videos.pexels.com/video-files/6909829/6909829-uhd_2560_1440_25fps.mp4"
+          src="https://v1.pinimg.com/videos/mc/720p/41/a1/65/41a165a8be534ed8e8e8010c8168d621.mp4"
         />
       </div>
 
@@ -45,11 +58,20 @@ export default function SignUpPage() {
             Sign Up
           </h2>
 
+          {/* Mensagem de erro */}
+          {error && (
+            <div className="mb-8 bg-red-100 border border-red-400 text-red-700 text-sm font-medium p-3 rounded-xl flex items-center gap-2 shadow-md">
+              <AiOutlineWarning className="text-red-500 text-lg" />
+              <p>{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             {/* Campo de Nome/Nickname */}
-            <div className="relative mb-4">
+            <div className="relative mb-6">
               <input
                 type="text"
+                id="name"
                 className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
                 disabled={pending}
                 placeholder="Name or Nickname"
@@ -57,15 +79,19 @@ export default function SignUpPage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
               />
-              <label className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600">
+              <label
+                htmlFor="name"
+                className="absolute left-0 -top-3 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-600 cursor-text"
+              >
                 Name or Nickname
               </label>
             </div>
 
             {/* Campo de Email */}
-            <div className="relative mb-4">
+            <div className="relative mb-6">
               <input
                 type="email"
+                id="email"
                 className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
                 disabled={pending}
                 placeholder="Email"
@@ -73,7 +99,10 @@ export default function SignUpPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
               />
-              <label className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600">
+              <label
+                htmlFor="email"
+                className="absolute left-0 -top-3 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-600 cursor-text"
+              >
                 Email
               </label>
             </div>
@@ -82,6 +111,7 @@ export default function SignUpPage() {
             <div className="relative mb-6">
               <input
                 type="password"
+                id="password"
                 className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
                 disabled={pending}
                 placeholder="Password"
@@ -89,7 +119,10 @@ export default function SignUpPage() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
               />
-              <label className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600">
+              <label
+                htmlFor="password"
+                className="absolute left-0 -top-3 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-600 cursor-text"
+              >
                 Password
               </label>
             </div>
