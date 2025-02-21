@@ -2,18 +2,45 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { AiOutlineWarning } from "react-icons/ai";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const router = useRouter();
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPending(true);
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+    if (res?.ok) {
+      router.push("/");
+      toast.success("Login successful");
+    } else if (res?.status === 401) {
+      setError("Invalid credentials");
+      setPending(false);
+    } else {
+      setError("Something went wrong");
+    }
+  };
+
   return (
     <div className="flex h-screen">
-      {/* Vídeo do lado esquerdo */}
+      {/* GIF no lado esquerdo */}
       <div className="w-1/2 h-full">
-        <video
-          autoPlay
-          loop
-          muted
+        <img
+          src="https://i.pinimg.com/originals/27/f4/81/27f48185c6920557e9757e7ebfc43bac.gif"
+          alt="Login animation"
           className="w-full h-full object-cover"
-          src="https://videos.pexels.com/video-files/6909829/6909829-uhd_2560_1440_25fps.mp4"
         />
       </div>
 
@@ -24,40 +51,55 @@ export default function LoginPage() {
             Login
           </h2>
 
-          {/* Campo de Email */}
-          <div className="relative mb-4">
-            <input
-              type="email"
-              className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
-              placeholder="Email"
-              required
-            />
-            <label
-              className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600"
-            >
-              Email
-            </label>
-          </div>
+          {error && (
+            <div className="mb-8 bg-red-100 border border-red-400 text-red-700 text-sm font-medium p-3 rounded-xl flex items-center gap-2 shadow-md">
+              <AiOutlineWarning className="text-red-500 text-lg" />
+              <p>{error}</p>
+            </div>
+          )}
 
-          {/* Campo de Senha */}
-          <div className="relative mb-6">
-            <input
-              type="password"
-              className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
-              placeholder="Password"
-              required
-            />
-            <label
-              className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600"
-            >
-              Password
-            </label>
-          </div>
+          <form onSubmit={handleSubmit}>
+            {/* Campo de Email */}
+            <div className="relative mb-4">
+              <input
+                type="email"
+                disabled={pending}
+                className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <label className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600">
+                Email
+              </label>
+            </div>
 
-          {/* Botão de Login */}
-          <button className="w-full bg-purple-600 text-white py-3 rounded-full font-bold hover:bg-purple-700 transition-all">
-            Login
-          </button>
+            {/* Campo de Senha */}
+            <div className="relative mb-6">
+              <input
+                type="password"
+                disabled={pending}
+                className="peer h-12 w-full border-b-2 border-gray-300 text-gray-900 focus:outline-none focus:border-purple-600 placeholder-transparent"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <label className="absolute left-0 -top-5 text-gray-600 text-sm transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-5 peer-focus:text-sm peer-focus:text-purple-600">
+                Password
+              </label>
+            </div>
+
+            {/* Botão de Login */}
+            <button
+              type="submit"
+              className="w-full bg-purple-600 text-white py-3 rounded-full font-bold hover:bg-purple-700 transition-all"
+              disabled={pending}
+            >
+              Login
+            </button>
+          </form>
 
           {/* Separador */}
           <div className="flex items-center my-4">
@@ -76,7 +118,7 @@ export default function LoginPage() {
 
           {/* Criar nova conta */}
           <p className="text-center text-gray-600 mt-4">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <a href="/sign-up" className="text-purple-600 hover:underline">
               Create new account
             </a>
