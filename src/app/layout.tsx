@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import SessionProvider from "@/components/SessionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LangSaaS",
-  description: "Aprendizagem de idiomas",
+  title: "Lavender | Language Learning Platform",
+  description: "Lavender | Language Learning Platform",
 };
 
 export default function RootLayout({
@@ -18,9 +19,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-
-        <Toaster />
-        {children}
+        <SessionProvider>
+          <Toaster />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

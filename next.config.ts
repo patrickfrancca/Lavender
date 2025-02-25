@@ -1,8 +1,17 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+// next.config.js
+module.exports = {
   images: {
-    domains: ["i.pinimg.com"], // Permite imagens deste domínio externo
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pinimg.com',
+        pathname: '/**',
+      }
+    ],
   },
-};
-
-module.exports = nextConfig;
+}

@@ -5,6 +5,7 @@ import { FaGithub } from "react-icons/fa";
 import { toast } from "sonner";
 import { AiOutlineWarning } from "react-icons/ai";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function SignUpPage() {
   const [form, setForm] = useState({
@@ -38,16 +39,22 @@ export default function SignUpPage() {
     }
   };
 
+    const handleProvider = (
+      event: React.MouseEvent<HTMLButtonElement>,
+      value: "github" | "google"
+    ) => {
+      event.preventDefault();
+      signIn(value, { callbackUrl: "/" });
+    };
+
   return (
     <div className="flex h-screen">
       {/* Vídeo do lado esquerdo */}
       <div className="w-1/2 h-full">
-        <video
-          autoPlay
-          loop
-          muted
-          className="w-full h-full object-cover"
-          src="https://v1.pinimg.com/videos/mc/720p/41/a1/65/41a165a8be534ed8e8e8010c8168d621.mp4"
+        <img
+            src="https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif"
+            alt="Login animation"
+            className="w-full h-full object-cover"
         />
       </div>
 
@@ -145,10 +152,16 @@ export default function SignUpPage() {
           </div>
 
           {/* Botões de Login com Google e GitHub */}
-          <button className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 rounded-full font-bold hover:bg-gray-200 transition-all mb-3">
+          <button
+            disabled={false}
+            
+            className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 rounded-full font-bold hover:bg-gray-200 transition-all mb-3">
             <FcGoogle className="text-xl" /> Sign Up with Google
           </button>
-          <button className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-full font-bold hover:bg-gray-800 transition-all">
+          <button 
+            disabled={false}
+            onClick={(e) => handleProvider(e, "github")}
+            className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-full font-bold hover:bg-gray-800 transition-all">
             <FaGithub className="text-xl" /> Sign Up with GitHub
           </button>
 

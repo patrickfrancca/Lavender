@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { signIn } from "next-auth/react";
@@ -33,12 +33,20 @@ export default function LoginPage() {
     }
   };
 
+  const handleProvider = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    value: "github" | "google"
+  ) => {
+    event.preventDefault();
+    signIn(value, { callbackUrl: "/" });
+  };
+
   return (
     <div className="flex h-screen">
       {/* GIF no lado esquerdo */}
       <div className="w-1/2 h-full">
         <img
-          src="https://i.pinimg.com/originals/27/f4/81/27f48185c6920557e9757e7ebfc43bac.gif"
+          src="https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif"
           alt="Login animation"
           className="w-full h-full object-cover"
         />
@@ -109,10 +117,16 @@ export default function LoginPage() {
           </div>
 
           {/* Botões de Login com Google e GitHub */}
-          <button className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 rounded-full font-bold hover:bg-gray-200 transition-all mb-3">
+          <button 
+          disabled={false}
+          onClick={(e) => handleProvider(e, "google")}
+            className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-800 py-3 rounded-full font-bold hover:bg-gray-200 transition-all mb-3">
             <FcGoogle className="text-xl" /> Login with Google
           </button>
-          <button className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-full font-bold hover:bg-gray-800 transition-all">
+          <button
+            disabled={false}
+            onClick={(e) => handleProvider(e, "github")}
+            className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-full font-bold hover:bg-gray-800 transition-all">
             <FaGithub className="text-xl" /> Login with GitHub
           </button>
 

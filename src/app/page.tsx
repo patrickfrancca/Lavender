@@ -3,6 +3,9 @@
 import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react"; // Importa sessão do NextAuth
+import { Settings, LogIn, UserPlus } from "lucide-react"; // Ícones para o layout
+import SettingsPopup from "@/components/ui/SettingsPopup/SettingsPopup";
 
 type SkillType = {
   id: number;
@@ -55,7 +58,7 @@ function SkillCard({ skill }: { skill: SkillType }) {
       >
         <div
           ref={glowRef}
-          className={`absolute w-40 h-40 bg-[#6f00ff]/40 rounded-full blur-3xl opacity-0 transition-opacity duration-200 pointer-events-none will-change-transform ${
+          className={`absolute w-40 h-40 bg-[#714aff44]/60 rounded-full blur-3xl opacity-0 transition-opacity duration-200 pointer-events-none will-change-transform ${
             isHovered ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -75,6 +78,9 @@ function SkillCard({ skill }: { skill: SkillType }) {
 }
 
 export default function Home() {
+  const { data: session } = useSession(); // Obtém a sessão do NextAuth
+  const [showSettings, setShowSettings] = useState(false);
+
   const skills: SkillType[] = [
     {
       id: 1,
@@ -122,6 +128,36 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#EBE1EF] flex flex-col items-center justify-center">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
+        {!session ? (
+          <>
+            <Link
+              href="/sign-in"
+              className="p-2 bg-[#A28DB8] text-white rounded-xl shadow-md transition-all duration-300 hover:bg-[#714aff44] flex items-center gap-2"
+            >
+              <LogIn size={18} /> Log in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="p-2 bg-[#A28DB8] text-white rounded-xl shadow-md transition-all duration-300 hover:bg-[#714aff44] flex items-center gap-2"
+            >
+              <UserPlus size={18} /> Sign Up
+            </Link>
+          </>
+        ) : (
+          <>
+            <span className="text-[#A28DB8] font-medium">Welcome, {session.user?.name}</span>
+            <span className="h-[20px] w-[2px] bg-[#a793bc3b]"></span>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 bg-[#A28DB8] text-white rounded-full shadow-md transition-all duration-300 hover:bg-[#714aff44]"
+            >
+              <Settings size={22} />
+            </button>
+          </>
+        )}
+      </div>
+
       <div className="max-w-7xl w-full px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-7xl">
           {skills.map((skill) => (
@@ -129,6 +165,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {showSettings && <SettingsPopup onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
