@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   --background: #ffffff;
@@ -32,5 +32,66 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Adicione isso no seu arquivo CSS global ou módulo CSS */
+
+.typing-effect {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 0;
+  border-right: 3px solid #A28DB8; /* Define o estilo do ponteiro */
+  animation: 
+    typing 4s steps(100) 1s forwards, 
+    blink-caret 0.5s step-end infinite, /* Cursor pisca desde o início */
+    disappear-caret 1s 2.5s forwards; /* Cursor desaparece no final */
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink-caret {
+  50% {
+    border-color: transparent;
+  }
+}
+
+@keyframes disappear-caret {
+  100% {
+    border-color: transparent;
+  }
+}
+
+.bg-spiral {
+  background: conic-gradient(
+    #714aff 10%, 
+    #EBE1EF 10% 20%, 
+    #714aff 20% 30%, 
+    #EBE1EF 30% 40%, 
+    #714aff 40% 50%, 
+    #EBE1EF 50% 60%, 
+    #714aff 60% 70%, 
+    #EBE1EF 70% 80%, 
+    #714aff 80% 90%, 
+    #EBE1EF 90% 100%
+  );
+  background-size: 400% 400%;
+  animation: spiralBackground 5s infinite linear;
+}
+
+@keyframes spiralBackground {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }

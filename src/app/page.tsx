@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react"; // Importa sessão do NextAuth
 import { Settings, LogIn, UserPlus } from "lucide-react"; // Ícones para o layout
 import SettingsPopup from "@/components/ui/SettingsPopup/SettingsPopup";
+import { phrases } from "@/app/data/phrases"; // Importando o array de frases
 
 type SkillType = {
   id: number;
@@ -23,24 +24,29 @@ function SkillCard({ skill }: { skill: SkillType }) {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!cardRef.current || !glowRef.current) return;
-
+  
       const rect = cardRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-
+  
       glowRef.current.style.transform = `translate(${x - 80}px, ${y - 80}px)`;
     };
-
-    const handleMouseEnter = () => setIsHovered(true);
-    const handleMouseLeave = () => setIsHovered(false);
-
+  
+    const handleMouseEnter = () => {
+      setIsHovered(true);
+    };
+  
+    const handleMouseLeave = () => {
+      setTimeout(() => setIsHovered(false), 0); // Delay de 200ms na remoção do brilho
+    };
+  
     const card = cardRef.current;
     if (card) {
       card.addEventListener("mousemove", handleMouseMove);
       card.addEventListener("mouseenter", handleMouseEnter);
       card.addEventListener("mouseleave", handleMouseLeave);
     }
-
+  
     return () => {
       if (card) {
         card.removeEventListener("mousemove", handleMouseMove);
@@ -58,7 +64,7 @@ function SkillCard({ skill }: { skill: SkillType }) {
       >
         <div
           ref={glowRef}
-          className={`absolute w-40 h-40 bg-[#714aff44]/60 rounded-full blur-3xl opacity-0 transition-opacity duration-200 pointer-events-none will-change-transform ${
+          className={`absolute w-40 h-40 bg-[#714aff44]/60 rounded-full blur-3xl opacity-0 pointer-events-none will-change-transform ${
             isHovered ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -81,48 +87,60 @@ export default function Home() {
   const { data: session } = useSession(); // Obtém a sessão do NextAuth
   const [showSettings, setShowSettings] = useState(false);
 
+  // Função para gerar o índice baseado na data atual
+  const getDailyPhraseIndex = () => {
+    const today = new Date();
+    const dayOfYear = Math.floor(
+      (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
+    ); // Calcula o dia do ano
+    return dayOfYear % phrases.length; // Garante que o índice esteja dentro dos limites do array
+  };
+
+  // Seleciona a frase do dia
+  const dailyPhrase = phrases[getDailyPhraseIndex()];
+
   const skills: SkillType[] = [
     {
       id: 1,
       name: "Vocabulary",
-      description: "Learn new words every day with our spaced repetition tool using cards.",
+      description: "Learn new words every day with our spaced repetition technique using cards.",
       href: "/vocabulary",
-      image: "https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif",
+      image: "https://i.pinimg.com/originals/6d/3c/fd/6d3cfda6e7bae017c8b264fb3a821e12.gif",
     },
     {
       id: 2,
       name: "Reading",
       description: "Read a story of your choice and improve your written understanding of a language.",
       href: "/reading",
-      image: "https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif",
+      image: "https://i.pinimg.com/originals/6d/3c/fd/6d3cfda6e7bae017c8b264fb3a821e12.gif",
     },
     {
       id: 3,
       name: "Listening",
       description: "Listen to a story and improve your listening comprehension of what is being said.",
       href: "/listening",
-      image: "https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif",
+      image: "https://i.pinimg.com/originals/6d/3c/fd/6d3cfda6e7bae017c8b264fb3a821e12.gif",
     },
     {
       id: 4,
       name: "Writing",
       description: "Write a short text and our tool will analyze it and give you feedback.",
       href: "/writing",
-      image: "https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif",
+      image: "https://i.pinimg.com/originals/6d/3c/fd/6d3cfda6e7bae017c8b264fb3a821e12.gif",
     },
     {
       id: 5,
       name: "Speaking",
       description: "Practice speaking in real-time with an AI to understand real conversations better.",
       href: "/speaking",
-      image: "https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif",
+      image: "https://i.pinimg.com/originals/6d/3c/fd/6d3cfda6e7bae017c8b264fb3a821e12.gif",
     },
     {
       id: 6,
       name: "Grammar",
       description: "Practice constructing sentences daily to master grammar rules.",
       href: "/grammar",
-      image: "https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif",
+      image: "https://i.pinimg.com/originals/6d/3c/fd/6d3cfda6e7bae017c8b264fb3a821e12.gif",
     },
   ];
 
@@ -146,7 +164,7 @@ export default function Home() {
           </>
         ) : (
           <>
-            <span className="text-[#A28DB8] font-medium">Welcome, {session.user?.name}</span>
+            <span className="text-[#A28DB8] font-medium">Connected as: {session.user?.name}</span>
             <span className="h-[20px] w-[2px] bg-[#a793bc3b]"></span>
             <button
               onClick={() => setShowSettings(true)}
@@ -156,6 +174,13 @@ export default function Home() {
             </button>
           </>
         )}
+      </div>
+
+      <div className="max-w-7xl w-full px-4 py-8 flex flex-col items-center">
+        {/* Frase de efeito com animação de digitação */}
+        <h1 className="text-3xl md:text-4xl font-bold text-[#A28DB8] mb-1 text-center typing-effect">
+          {dailyPhrase}
+        </h1>
       </div>
 
       <div className="max-w-7xl w-full px-4 py-8">

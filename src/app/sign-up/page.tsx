@@ -52,7 +52,7 @@ export default function SignUpPage() {
       {/* Vídeo do lado esquerdo */}
       <div className="w-1/2 h-full">
         <img
-            src="https://i.pinimg.com/originals/c2/05/55/c20555745c54d478f84db4bddcbd599e.gif"
+            src="/"
             alt="Login animation"
             className="w-full h-full object-cover"
         />

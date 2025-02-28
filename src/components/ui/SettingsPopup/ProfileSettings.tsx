@@ -7,7 +7,7 @@ export default function ProfileSettings() {
 
   return (
     <div>
-      <p>Logged in as <strong>{session?.user?.name}</strong></p>
+      <p>Connected as: <strong>{session?.user?.name}</strong></p>
       <p className="mb-5">Your E-mail is: <strong>{session?.user?.email}</strong></p>
       <p>Welcome to the Lavender platform.</p>
     </div>
