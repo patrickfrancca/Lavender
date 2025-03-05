@@ -3,10 +3,11 @@
 import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react"; // Importa sessão do NextAuth
-import { Settings, LogIn, UserPlus } from "lucide-react"; // Ícones para o layout
+import { useSession } from "next-auth/react";
+import { Settings, LogIn, UserPlus } from "lucide-react";
 import SettingsPopup from "@/components/ui/SettingsPopup/SettingsPopup";
-import { phrases } from "@/app/data/phrases"; // Importando o array de frases
+import { phrases } from "@/app/data/phrases";
+import { FaCheckCircle } from "react-icons/fa";
 
 type SkillType = {
   id: number;
@@ -16,7 +17,7 @@ type SkillType = {
   image: string;
 };
 
-function SkillCard({ skill }: { skill: SkillType }) {
+function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillType; disabled?: boolean; countdown?: string }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -37,7 +38,7 @@ function SkillCard({ skill }: { skill: SkillType }) {
     };
   
     const handleMouseLeave = () => {
-      setTimeout(() => setIsHovered(false), 0); // Delay de 200ms na remoção do brilho
+      setTimeout(() => setIsHovered(false), 0);
     };
   
     const card = cardRef.current;
@@ -56,47 +57,62 @@ function SkillCard({ skill }: { skill: SkillType }) {
     };
   }, []);
 
-  return (
-    <Link href={skill.href} className="relative group block">
+  const cardContent = (
+    <div
+      className={`p-6 backdrop-blur-lg rounded-xl border border-[#6900fc15] shadow-glass hover:bg-[#714aff09] transition-all duration-300 text-left min-h-[320px] flex flex-col overflow-hidden ${disabled ? "filter blur-sm" : ""}`}
+      ref={cardRef}
+    >
       <div
-        className="p-6 backdrop-blur-lg rounded-xl border border-[#6900fc15] shadow-glass hover:bg-[#714aff09] transition-all duration-300 text-left min-h-[320px] flex flex-col overflow-hidden"
-        ref={cardRef}
-      >
-        <div
-          ref={glowRef}
-          className={`absolute w-40 h-40 bg-[#714aff44]/60 rounded-full blur-3xl opacity-0 pointer-events-none will-change-transform ${
-            isHovered ? "opacity-100" : "opacity-0"
-          }`}
-        />
-
-        <Image
-          src={skill.image}
-          alt={skill.name}
-          width={300}
-          height={150}
-          className="w-full h-32 object-cover rounded-2xl mb-4 border-4 border-[#714aff09] transition-all duration-300 hover:border-[#714aff44]"
-        />
-        <h2 className="text-2xl font-bold mb-2 text-[#A28DB8]">{skill.name}</h2>
-        <p className="text-[#A28DB8]">{skill.description}</p>
-      </div>
-    </Link>
+        ref={glowRef}
+        className={`absolute w-40 h-40 bg-[#714aff44]/60 rounded-full blur-3xl opacity-0 pointer-events-none will-change-transform ${
+          isHovered ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <Image
+        src={skill.image}
+        alt={skill.name}
+        width={300}
+        height={150}
+        className="w-full h-32 object-cover rounded-2xl mb-4 border-4 border-[#714aff09] transition-all duration-300 hover:border-[#714aff44]"
+      />
+      <h2 className="text-2xl font-bold mb-2 text-[#A28DB8]">{skill.name}</h2>
+      <p className="text-[#A28DB8]">{skill.description}</p>
+    </div>
   );
+
+  if (disabled) {
+    return (
+      <div className="relative group block">
+        {cardContent}
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#7023ff] bg-opacity-10 rounded-xl">
+          <FaCheckCircle className="text-[#9f45ff] w-16 h-16 animate-pulse" />
+          <p className="text-white mt-2">Completed for today. Try again in {countdown}</p>
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <Link href={skill.href} className="relative group block">
+        {cardContent}
+      </Link>
+    );
+  }
 }
 
 export default function Home() {
-  const { data: session } = useSession(); // Obtém a sessão do NextAuth
+  const { data: session } = useSession();
   const [showSettings, setShowSettings] = useState(false);
+  const [writingLocked, setWritingLocked] = useState(false);
+  const [countdown, setCountdown] = useState("");
 
-  // Função para gerar o índice baseado na data atual
   const getDailyPhraseIndex = () => {
     const today = new Date();
     const dayOfYear = Math.floor(
       (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-    ); // Calcula o dia do ano
-    return dayOfYear % phrases.length; // Garante que o índice esteja dentro dos limites do array
+    );
+    return dayOfYear % phrases.length;
   };
 
-  // Seleciona a frase do dia
   const dailyPhrase = phrases[getDailyPhraseIndex()];
 
   const skills: SkillType[] = [
@@ -144,6 +160,53 @@ export default function Home() {
     },
   ];
 
+  // Verifica se o módulo Writing foi concluído hoje para o usuário logado
+  useEffect(() => {
+    function updateLockStatus() {
+      if (session && session.user) {
+        const userId = session.user.id || session.user.email;
+        const storageKey = `writingStatus_${userId}`;
+        const stored = localStorage.getItem(storageKey);
+        const today = new Date().toISOString().split("T")[0];
+        if (stored) {
+          try {
+            const data = JSON.parse(stored);
+            if (data.status === "PERFECT" && data.date === today) {
+              setWritingLocked(true);
+            } else {
+              setWritingLocked(false);
+            }
+          } catch (error) {
+            setWritingLocked(false);
+          }
+        } else {
+          setWritingLocked(false);
+        }
+      } else {
+        setWritingLocked(false);
+      }
+    }
+    updateLockStatus();
+    window.addEventListener("storage", updateLockStatus);
+    return () => window.removeEventListener("storage", updateLockStatus);
+  }, [session]);
+
+  // Atualiza o contador regressivo para a meia-noite
+  useEffect(() => {
+    function updateCountdown() {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const diff = midnight.getTime() - now.getTime();
+      const hours = Math.floor(diff / 1000 / 60 / 60);
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      setCountdown(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`);
+    }
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#EBE1EF] flex flex-col items-center justify-center">
       <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
@@ -177,7 +240,6 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl w-full px-4 py-8 flex flex-col items-center">
-        {/* Frase de efeito com animação de digitação */}
         <h1 className="text-3xl md:text-4xl font-bold text-[#A28DB8] mb-1 text-center typing-effect">
           {dailyPhrase}
         </h1>
@@ -185,9 +247,13 @@ export default function Home() {
 
       <div className="max-w-7xl w-full px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-7xl">
-          {skills.map((skill) => (
-            <SkillCard key={skill.id} skill={skill} />
-          ))}
+          {skills.map((skill) =>
+            skill.name === "Writing" && writingLocked ? (
+              <SkillCard key={skill.id} skill={skill} disabled={true} countdown={countdown} />
+            ) : (
+              <SkillCard key={skill.id} skill={skill} />
+            )
+          )}
         </div>
       </div>
 
