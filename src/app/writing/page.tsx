@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -27,6 +29,7 @@ export default function WritingPage() {
   const [isFetchingDefinition, setIsFetchingDefinition] = useState(false);
   const [isFetchingIdea, setIsFetchingIdea] = useState(false);
   const [idea, setIdea] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isInactive, setIsInactive] = useState(false);
   // Estado para controlar a exibição do modal com o conteúdo escrito
   const [showTextContent, setShowTextContent] = useState(false);
@@ -193,19 +196,19 @@ export default function WritingPage() {
     switch (status.toUpperCase()) {
       case "PERFECT":
         return (
-          <h3 className="text-2xl font-bold text-green-400 flex items-center gap-2">
+          <h3 className="text-2xl font-bold text-[#53ff1f] flex items-center gap-2">
             <FaCheckCircle className="pointer-events-none" /> Perfect
           </h3>
         );
       case "ALMOST_THERE":
         return (
-          <h3 className="text-2xl font-bold text-[#6932ff] flex items-center gap-2">
+          <h3 className="text-2xl font-bold text-[#946dff] flex items-center gap-2">
             <FaExclamationCircle /> Almost There
           </h3>
         );
       default:
         return (
-          <h3 className="text-2xl font-bold text-[#130F1A]">
+          <h3 className="text-2xl font-bold text-[#ffffff]">
             Unknown Status
           </h3>
         );
@@ -213,7 +216,7 @@ export default function WritingPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-16 bg-[#B3BAFF] text-[#B3BAFF]">
+    <div className="flex flex-col items-center justify-center min-h-screen p-16 bg-[#ffffff] text-[#B3BAFF]">
       {/* Texto principal */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -221,10 +224,10 @@ export default function WritingPage() {
         transition={{ delay: 0.2 }}
         className="mb-12 text-center"
       >
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-[#6F6C91] to-[#130F1A] bg-clip-text text-transparent">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-[#A8AFF5] to-[#a8aff569] bg-clip-text text-transparent">
           Write. Get Feedback. Rewrite. Learn.
         </h1>
-        <p className="mt-4 text-xl text-[#6F6C91]">
+        <p className="mt-4 text-xl text-[#a8aff57a]">
           Improve your writing skills through iterative feedback
         </p>
       </motion.div>
@@ -234,7 +237,7 @@ export default function WritingPage() {
         initial={{ opacity: 0, y: -20 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.4 }}
-        className="w-full max-w-7xl p-12 bg-[#130F1A] rounded-xl shadow-3xl text-gray-900"
+        className="w-full max-w-7xl p-12 bg-[#a8aff55e] rounded-xl shadow-3xl text-[white]"
       >
         <div className="grid grid-cols-2 gap-10">
           {/* Área de escrita */}
@@ -247,25 +250,25 @@ export default function WritingPage() {
                   setIsInactive(false);
                 }}
                 placeholder="Write here at least a 2-line text about anything in the language you are learning."
-                className="w-full h-[400px] p-6 text-2xl text[#69678A] bg-[#B3BAFF] rounded-xl border-none shadow-2xl focus:ring-0 focus:outline-none placeholder:text-[#646183]"
+                className="w-full h-[400px] p-6 text-2xl text[#69678A] bg-[#B3BAFF] rounded-xl border-none shadow-2xl focus:ring-0 focus:outline-none placeholder:text-[#ffffff]"
                 disabled={status.toUpperCase() === "PERFECT"}
               />
               <div className="absolute bottom-5 left-3 flex flex-col items-start gap-2">
                 {(isFetchingIdea || idea) && (
                   <div 
                     ref={ideaPopupRef}
-                    className="bg-[#A3A7DF] text-[#646284] p-3 rounded-2xl shadow-2xl max-w-md"
+                    className="bg-[#cdd2ff] text-[#ffffff] p-3 rounded-2xl shadow-2xl max-w-md"
                     style={{ zIndex: 1 }}
                   >
                     {isFetchingIdea ? (
                       <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 border-4 border-[#646284] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-6 h-6 border-4 border-[white] border-t-transparent rounded-full animate-spin"></div>
                         <span>Generating idea...</span>
                       </div>
                     ) : (
                       <>
                         <h3 className="text-xl font-bold mb-4">Writing Idea</h3>
-                        <p className="text-[#646284]">{idea}</p>
+                        <p className="text-[#ffffff]">{idea}</p>
                       </>
                     )}
                   </div>
@@ -276,9 +279,9 @@ export default function WritingPage() {
                   transition={{ delay: 0.6 }}
                   onClick={fetchWritingIdea}
                   disabled={status.toUpperCase() === "PERFECT"}
-                  className="px-6 py-3 text-xl bg-[#A3A7DF] hover:bg-[#999dd1] transition-all text-[#676588] rounded-xl shadow-md flex items-center justify-center gap-2"
+                  className="px-6 py-3 text-xl hover:bg-[#d5d9ff6c] transition-all text-[#ffffff] rounded-xl shadow-md flex items-center justify-center gap-2"
                 >
-                  <FaLightbulb className="w-6 h-6 text-[#676588]" />
+                  <FaLightbulb className="w-6 h-6 text-[#ffffff]" />
                   <span>Idea</span>
                 </motion.button>
               </div>
@@ -286,10 +289,10 @@ export default function WritingPage() {
             {/* Overlay para "PERFECT" com ícone de correto e botão moderno de "Show Text" */}
             {status.toUpperCase() === "PERFECT" && (
               <div className="absolute inset-0 flex items-center justify-center z-10 space-x-4">
-                <FaCheckCircle className="text-green-400 w-16 h-16 animate-pulse pointer-events-none" />
+                <FaCheckCircle className="text-[#53ff1f] w-16 h-16 animate-pulse pointer-events-none" />
                 <button
                   onClick={() => setShowTextContent(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-2xl transition transform hover:scale-105"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#B3BAFF] to-[#9a88ff] text-white rounded-xl shadow-lg hover:shadow-2xl transition transform hover:scale-105"
                 >
                   <FaEye className="w-6 h-6" />
                   <span className="hidden sm:inline">Show Text</span>
@@ -300,7 +303,7 @@ export default function WritingPage() {
 
           {/* Área de feedback */}
           <div
-            className="w-full h-[400px] p-6 text-2xl text-[#130F1A] bg-[#B3BAFF] rounded-xl border-none shadow-2xl flex flex-col items-center justify-center"
+            className="w-full h-[400px] p-6 text-2xl text-[#ffffff] bg-[#B3BAFF] rounded-xl border-none shadow-2xl flex flex-col items-center justify-center"
             onClick={handleWordClick}
           >
             {status ? (
@@ -312,7 +315,7 @@ export default function WritingPage() {
                 />
               </>
             ) : (
-              <p className="text-center text-lg text-[#646183]">
+              <p className="text-center text-lg text-[#ffffff]">
                 Write text in the left field and click &quot;Check Grammar&quot;.{" "}
                 <strong>Feedback will appear here.</strong>
               </p>
@@ -323,15 +326,15 @@ export default function WritingPage() {
 
       {/* Modal para exibir o conteúdo escrito */}
       {showTextContent && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-          <div className="bg-[#B3BAFF] text-[#6F6C91] p-8 rounded-2xl shadow-xl max-w-lg w-full relative animate-fadeIn">
+        <div className="fixed inset-0 flex items-center justify-center bg-[black] bg-opacity-70 z-50">
+          <div className="bg-[#ffffff] text-[#B3BAFF] p-8 rounded-2xl shadow-xl max-w-lg w-full relative animate-fadeIn">
             <button 
               onClick={() => setShowTextContent(false)} 
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+              className="absolute top-4 right-4 text-[#B3BAFF] hover:text-[#b3bbffa2] transition-colors"
             >
               <FaTimes className="w-6 h-6" />
             </button>
-            <h2 className="text-2xl font-bold mb-4">Your Written Text</h2>
+            <h2 className="text-2xl font-bold mb-4">Your Written Text:</h2>
             <p className="whitespace-pre-wrap text-lg">{text}</p>
           </div>
         </div>
@@ -372,7 +375,7 @@ export default function WritingPage() {
         {status.toUpperCase() === "PERFECT" ? (
           <Link href="/">
             <button 
-              className="mt-6 px-6 py-3 text-xl bg-[#A3A7DF] hover:bg-[#999DD1] transition-all rounded-xl text-[#626081] shadow-md flex items-center justify-center gap-2"
+              className="mt-6 px-6 py-3 text-xl bg-[#B3BAFF] hover:bg-[#b3bbff9c] transition-all rounded-xl text-[white] shadow-md flex items-center justify-center gap-2"
             >
               Home
             </button>
@@ -380,12 +383,12 @@ export default function WritingPage() {
         ) : (
           <button
             onClick={handleCheckGrammar}
-            className="mt-6 px-6 py-3 text-xl text-[#646284] bg-[#A3A7DF] hover:bg-[#999DD1] transition-all rounded-xl shadow-md flex items-center justify-center gap-2"
+            className="mt-6 px-6 py-3 text-xl text-[#ffffff] bg-[#B3BAFF] hover:bg-[#b3bbffa2] transition-all rounded-xl shadow-md flex items-center justify-center gap-2"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <div className="w-6 h-6 border-4 border-[#69678B] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-4 border-[white] border-t-transparent rounded-full animate-spin"></div>
                 <span>Generating feedback</span>
               </>
             ) : (
@@ -398,7 +401,7 @@ export default function WritingPage() {
       {/* Estilos globais */}
       <style jsx global>{`
         .highlight {
-          color: #6932ff;
+          color: #946dff;
           font-weight: bold;
           position: relative;
           display: inline-block;
@@ -415,7 +418,7 @@ export default function WritingPage() {
           bottom: -2px;
           width: 100%;
           height: 2px;
-          background-color: #6932ff;
+          background-color: #946dff;
           transform: scaleX(0);
           transform-origin: left;
           animation: highlight 1s ease-in-out forwards;

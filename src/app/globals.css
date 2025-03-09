@@ -42,7 +42,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   width: 0;
-  border-right: 3px solid #A28DB8; /* Define o estilo do ponteiro */
+  border-right: 3px solid #A8AFF5; /* Define o estilo do ponteiro */
   animation: 
     typing 4s steps(100) 1s forwards, 
     blink-caret 0.5s step-end infinite, /* Cursor pisca desde o início */

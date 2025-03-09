@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useRef, useEffect, useState } from "react";
@@ -59,12 +60,12 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
 
   const cardContent = (
     <div
-      className={`p-6 backdrop-blur-lg rounded-xl border border-[#6900fc15] shadow-glass hover:bg-[#714aff09] transition-all duration-300 text-left min-h-[320px] flex flex-col overflow-hidden ${disabled ? "filter blur-sm" : ""}`}
+      className={`p-6 backdrop-blur-lg rounded-xl border border-[#b3bbff33] shadow-glass hover:bg-[#714aff09] transition-all duration-300 text-left min-h-[320px] flex flex-col overflow-hidden ${disabled ? "filter blur-sm" : ""}`}
       ref={cardRef}
     >
       <div
         ref={glowRef}
-        className={`absolute w-40 h-40 bg-[#714aff44]/60 rounded-full blur-3xl opacity-0 pointer-events-none will-change-transform ${
+        className={`absolute w-40 h-40 bg-[#a8aff5] rounded-full blur-3xl opacity-0 pointer-events-none will-change-transform ${
           isHovered ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -73,10 +74,10 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
         alt={skill.name}
         width={300}
         height={150}
-        className="w-full h-32 object-cover rounded-2xl mb-4 border-4 border-[#714aff09] transition-all duration-300 hover:border-[#714aff44]"
+        className="w-full h-32 object-cover rounded-2xl mb-4 border-4 border-[#a8aff51a] transition-all duration-300 hover:border-[#a8aff5b0]"
       />
-      <h2 className="text-2xl font-bold mb-2 text-[#A28DB8]">{skill.name}</h2>
-      <p className="text-[#A28DB8]">{skill.description}</p>
+      <h2 className="text-2xl font-bold mb-2 text-[#B3BAFF]">{skill.name}</h2>
+      <p className="text-[#B3BAFF]">{skill.description}</p>
     </div>
   );
 
@@ -84,9 +85,9 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
     return (
       <div className="relative group block">
         {cardContent}
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#7023ff] bg-opacity-10 rounded-xl">
-          <FaCheckCircle className="text-[#9f45ff] w-16 h-16 animate-pulse" />
-          <p className="text-white mt-2">Completed for today. Try again in {countdown}</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#A8AFF5] bg-opacity-10 rounded-xl">
+          <FaCheckCircle className="text-[#A8AFF5] w-16 h-16 animate-pulse" />
+          <p className="text-[#A8AFF5] mt-2">Completed for today. Try again in {countdown}</p>
         </div>
       </div>
     );
@@ -208,30 +209,30 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#EBE1EF] flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center">
       <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
         {!session ? (
           <>
             <Link
               href="/sign-in"
-              className="p-2 bg-[#A28DB8] text-white rounded-xl shadow-md transition-all duration-300 hover:bg-[#714aff44] flex items-center gap-2"
+              className="p-2 bg-[#a8aff5] text-white rounded-xl shadow-md transition-all duration-300 hover:bg-[#b4bcff] flex items-center gap-2"
             >
               <LogIn size={18} /> Log in
             </Link>
             <Link
               href="/sign-up"
-              className="p-2 bg-[#A28DB8] text-white rounded-xl shadow-md transition-all duration-300 hover:bg-[#714aff44] flex items-center gap-2"
+              className="p-2 bg-[#a8aff5] text-white rounded-xl shadow-md transition-all duration-300 hover:bg-[#b4bcff] flex items-center gap-2"
             >
               <UserPlus size={18} /> Sign Up
             </Link>
           </>
         ) : (
           <>
-            <span className="text-[#A28DB8] font-medium">Connected as: {session.user?.name}</span>
-            <span className="h-[20px] w-[2px] bg-[#a793bc3b]"></span>
+            <span className="text-[#A8AFF5] font-medium">Connected as: {session.user?.name}</span>
+            <span className="h-[20px] w-[2px] bg-[#a8aff54d]"></span>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 bg-[#A28DB8] text-white rounded-full shadow-md transition-all duration-300 hover:bg-[#714aff44]"
+              className="p-2 bg-[#A8AFF5] text-white rounded-full shadow-md transition-all duration-300 hover:bg-[#714aff44]"
             >
               <Settings size={22} />
             </button>
@@ -240,7 +241,7 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl w-full px-4 py-8 flex flex-col items-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#A28DB8] mb-1 text-center typing-effect">
+        <h1 className="text-3xl md:text-4xl font-bold text-[#a8aff5] mb-1 text-center typing-effect">
           {dailyPhrase}
         </h1>
       </div>
