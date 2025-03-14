@@ -7,37 +7,131 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Textarea } from "@/components/ui/Textarea";
 import { motion } from "framer-motion";
-import { FaCheckCircle, FaExclamationCircle, FaLightbulb, FaEye, FaTimes } from "react-icons/fa";
+import {
+  FaCheckCircle,
+  FaExclamationCircle,
+  FaLightbulb,
+  FaEye,
+  FaTimes,
+} from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import UserHeader from "@/components/ui/UserHeader"; // Importa o UserHeader
 
 export default function WritingPage() {
   const { data: session } = useSession();
-  // Usa o ID ou email do usuário para gerar a chave exclusiva
+  const router = useRouter();
+  // Chave única para status e timer baseada no ID ou e-mail do usuário
   const userId = session?.user?.id || session?.user?.email;
   const storageKey = userId ? `writingStatus_${userId}` : "writingStatus";
+  const timerKey = userId ? `writingTimer_${userId}` : "writingTimer";
+
+  const TIMER_DURATION = 10 * 60; // 10 minutos em segundos (substitua por 15 minutos se necessário)
 
   const [text, setText] = useState("");
   const [feedback, setFeedback] = useState(
     <>
-      Write a text in the field on the left and click on "Check Grammar".{" "}
-      <strong>Feedback will appear here</strong>.
+      Escreva um texto no campo à esquerda e clique em "Check Grammar".{" "}
+      <strong>O feedback aparecerá aqui.</strong>
     </>
   );
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [popupContent, setPopupContent] = useState<{ word: string; definition: string } | null>(null);
+  const [popupContent, setPopupContent] = useState<{
+    word: string;
+    definition: string;
+  } | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [isFetchingDefinition, setIsFetchingDefinition] = useState(false);
   const [isFetchingIdea, setIsFetchingIdea] = useState(false);
   const [idea, setIdea] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isInactive, setIsInactive] = useState(false);
-  // Estado para controlar a exibição do modal com o conteúdo escrito
   const [showTextContent, setShowTextContent] = useState(false);
+  // Estado para armazenar o texto corrigido (pode ser diferente de 'text')
+  const [correctedText, setCorrectedText] = useState("");
+  // Estado para armazenar um resumo das correções
+  const [correctionsSummary, setCorrectionsSummary] = useState("");
+
+  // Estado do timer (em segundos)
+  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
+  // Estado para indicar que o tempo acabou
+  const [timeExpired, setTimeExpired] = useState(false);
+
+  // Estado para contar as ocorrências de "ALMOST_THERE"
+  const [almostThereCount, setAlmostThereCount] = useState(0);
 
   const popupRef = useRef<HTMLDivElement>(null);
   const ideaPopupRef = useRef<HTMLDivElement>(null);
 
-  // Verifica no localStorage se o usuário já concluiu hoje o módulo Writing
+  // Função fallback simples para correção do texto
+  function simpleTextCorrection(input: string): string {
+    const trimmed = input.trim();
+    const sentences = trimmed
+      .split(".")
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => sentence.length > 0);
+    const correctedSentences = sentences.map((sentence) => {
+      return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+    });
+    return correctedSentences.join(". ") + (trimmed.endsWith(".") ? "." : "");
+  }
+
+  // Ao montar o componente, carrega o timer salvo para hoje ou inicia com TIMER_DURATION
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const storedTimer = localStorage.getItem(timerKey);
+    if (storedTimer) {
+      try {
+        const data = JSON.parse(storedTimer);
+        if (data.date === today && typeof data.timeLeft === "number") {
+          setTimeLeft(data.timeLeft);
+        } else {
+          setTimeLeft(TIMER_DURATION);
+          localStorage.setItem(
+            timerKey,
+            JSON.stringify({ timeLeft: TIMER_DURATION, date: today })
+          );
+        }
+      } catch (e) {
+        setTimeLeft(TIMER_DURATION);
+        localStorage.setItem(
+          timerKey,
+          JSON.stringify({ timeLeft: TIMER_DURATION, date: today })
+        );
+      }
+    } else {
+      setTimeLeft(TIMER_DURATION);
+      localStorage.setItem(
+        timerKey,
+        JSON.stringify({ timeLeft: TIMER_DURATION, date: today })
+      );
+    }
+  }, [timerKey]);
+
+  // Decrementa o timer enquanto a página está ativa e atualiza o localStorage a cada segundo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(interval);
+          localStorage.setItem(
+            timerKey,
+            JSON.stringify({ timeLeft: 0, date: new Date().toISOString().split("T")[0] })
+          );
+          setTimeExpired(true);
+          return 0;
+        }
+        const newTime = prevTime - 1;
+        localStorage.setItem(
+          timerKey,
+          JSON.stringify({ timeLeft: newTime, date: new Date().toISOString().split("T")[0] })
+        );
+        return newTime;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [router, timerKey]);
+
+  // Verifica se o usuário já completou o módulo de Writing hoje
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     const stored = localStorage.getItem(storageKey);
@@ -55,7 +149,7 @@ export default function WritingPage() {
     }
   }, [storageKey]);
 
-  // Sincroniza alterações entre abas
+  // Sincroniza alterações de status entre abas
   useEffect(() => {
     function handleStorageChange(e: StorageEvent) {
       if (e.key === storageKey) {
@@ -80,7 +174,7 @@ export default function WritingPage() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [storageKey]);
 
-  // Reset automático à meia-noite para o status do usuário
+  // Reseta o status à meia-noite
   useEffect(() => {
     const now = new Date();
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -109,14 +203,26 @@ export default function WritingPage() {
       body: JSON.stringify({ text }),
     });
     const data = await response.json();
-    setStatus(data.status || "");
+    const newStatus = data.status?.toUpperCase() || "";
+    setStatus(newStatus);
     setFeedback(data.feedback || "No feedback available.");
     setIsLoading(false);
 
-    // Se o feedback for PERFECT, salva o status para o usuário
-    if (data.status && data.status.toUpperCase() === "PERFECT") {
-      const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+
+    if (newStatus === "PERFECT") {
       localStorage.setItem(storageKey, JSON.stringify({ status: "PERFECT", date: today }));
+    } else if (newStatus === "ALMOST_THERE") {
+      setAlmostThereCount((prevCount) => {
+        const newCount = prevCount + 1;
+        if (newCount >= 30) {
+          // Ao atingir 30 ocorrências, atualiza para PERFECT e redireciona o usuário
+          setStatus("PERFECT");
+          localStorage.setItem(storageKey, JSON.stringify({ status: "PERFECT", date: today }));
+          router.push("/");
+        }
+        return newCount;
+      });
     }
   }
 
@@ -156,10 +262,7 @@ export default function WritingPage() {
       const scrollY = window.scrollY || document.documentElement.scrollTop;
       setPopupContent(null);
       setIsFetchingDefinition(true);
-      setPopupPosition({
-        x: rect.left + scrollX + rect.width / 2,
-        y: rect.bottom + scrollY + 5,
-      });
+      setPopupPosition({ x: rect.left + scrollX + rect.width / 2, y: rect.bottom + scrollY + 5 });
       try {
         const definition = await fetchWordDefinition(word);
         setPopupContent({ word, definition });
@@ -188,9 +291,7 @@ export default function WritingPage() {
   function getFeedbackTitle() {
     if (!status) {
       return (
-        <h3 className="text-2xl font-bold text-gray-400">
-          Waiting for your text...
-        </h3>
+        <h3 className="text-2xl font-bold text-gray-400">Waiting for your text...</h3>
       );
     }
     switch (status.toUpperCase()) {
@@ -208,16 +309,38 @@ export default function WritingPage() {
         );
       default:
         return (
-          <h3 className="text-2xl font-bold text-[#ffffff]">
-            Unknown Status
-          </h3>
+          <h3 className="text-2xl font-bold text-[#ffffff]">Unknown Status</h3>
         );
     }
   }
 
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-16 bg-[#ffffff] text-[#B3BAFF]">
-      {/* Texto principal */}
+    <div className="relative flex flex-col items-center justify-center min-h-screen p-16 bg-[#ffffff]">
+      {/* Header com informações do usuário */}
+      <header className="absolute top-4 right-4 z-50">
+        <UserHeader />
+      </header>
+
+      {/* Timer e mensagem */}
+      <div className="absolute bottom-4 right-4 flex flex-col items-end space-y-2">
+        <div className="bg-[#B3BAFF] text-white px-3 py-1 rounded-xl shadow text-lg">
+          {minutes}:{seconds.toString().padStart(2, "0")}
+        </div>
+        {timeExpired && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="bg-[#B3BAFF] text-[#ffffff] px-3 py-2 rounded-xl text-xs font-medium shadow-sm"
+          >
+            ⏳ Time's up! Try a new skill.
+          </motion.div>
+        )}
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -228,14 +351,13 @@ export default function WritingPage() {
           Write. Get Feedback. Rewrite. Learn.
         </h1>
         <p className="mt-4 text-xl text-[#a8aff57a]">
-          Improve your writing skills through iterative feedback
+          Improve your writing skills through iterative feedback.
         </p>
       </motion.div>
 
-      {/* Container principal */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }} 
-        animate={{ opacity: 1, y: 0 }} 
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="w-full max-w-7xl p-12 bg-[#a8aff55e] rounded-xl shadow-3xl text-[white]"
       >
@@ -243,19 +365,19 @@ export default function WritingPage() {
           {/* Área de escrita */}
           <div className="relative">
             <div className={`relative ${status.toUpperCase() === "PERFECT" ? "blur-[4px]" : ""}`}>
-              <Textarea 
-                value={text} 
+              <Textarea
+                value={text}
                 onChange={(e) => {
                   setText(e.target.value);
                   setIsInactive(false);
                 }}
-                placeholder="Write here at least a 2-line text about anything in the language you are learning."
-                className="w-full h-[400px] p-6 text-2xl text[#69678A] bg-[#B3BAFF] rounded-xl border-none shadow-2xl focus:ring-0 focus:outline-none placeholder:text-[#ffffff]"
+                placeholder="Escreva pelo menos 2 linhas sobre qualquer assunto na língua que você está aprendendo."
+                className="w-full h-[400px] p-6 text-2xl text-[#69678A] bg-[#B3BAFF] rounded-xl border-none shadow-2xl focus:ring-0 focus:outline-none placeholder:text-[#ffffff]"
                 disabled={status.toUpperCase() === "PERFECT"}
               />
               <div className="absolute bottom-5 left-3 flex flex-col items-start gap-2">
                 {(isFetchingIdea || idea) && (
-                  <div 
+                  <div
                     ref={ideaPopupRef}
                     className="bg-[#cdd2ff] text-[#ffffff] p-3 rounded-2xl shadow-2xl max-w-md"
                     style={{ zIndex: 1 }}
@@ -286,7 +408,7 @@ export default function WritingPage() {
                 </motion.button>
               </div>
             </div>
-            {/* Overlay para "PERFECT" com ícone de correto e botão moderno de "Show Text" */}
+            {/* Overlay para PERFECT com botão "Show Text" */}
             {status.toUpperCase() === "PERFECT" && (
               <div className="absolute inset-0 flex items-center justify-center z-10 space-x-4">
                 <FaCheckCircle className="text-[#53ff1f] w-16 h-16 animate-pulse pointer-events-none" />
@@ -309,48 +431,50 @@ export default function WritingPage() {
             {status ? (
               <>
                 {getFeedbackTitle()}
-                <p 
+                <p
                   className="text-center text-lg mt-4"
                   dangerouslySetInnerHTML={{ __html: feedback }}
                 />
               </>
             ) : (
               <p className="text-center text-lg text-[#ffffff]">
-                Write text in the left field and click &quot;Check Grammar&quot;.{" "}
-                <strong>Feedback will appear here.</strong>
+                Escreva um texto no campo à esquerda e clique em "Check Grammar".{" "}
+                <strong>O feedback aparecerá aqui.</strong>
               </p>
             )}
           </div>
         </div>
       </motion.div>
 
-      {/* Modal para exibir o conteúdo escrito */}
+      {/* Modal para exibir o texto corrigido e resumo das correções */}
       {showTextContent && (
         <div className="fixed inset-0 flex items-center justify-center bg-[black] bg-opacity-70 z-50">
           <div className="bg-[#ffffff] text-[#B3BAFF] p-8 rounded-2xl shadow-xl max-w-lg w-full relative animate-fadeIn">
-            <button 
-              onClick={() => setShowTextContent(false)} 
+            <button
+              onClick={() => setShowTextContent(false)}
               className="absolute top-4 right-4 text-[#B3BAFF] hover:text-[#b3bbffa2] transition-colors"
             >
               <FaTimes className="w-6 h-6" />
             </button>
-            <h2 className="text-2xl font-bold mb-4">Your Written Text:</h2>
-            <p className="whitespace-pre-wrap text-lg">{text}</p>
+            <h2 className="text-2xl font-bold mb-4">Your Text:</h2>
+            {correctionsSummary ? (
+              <div>
+                <h3 className="text-xl font-bold mb-2">Corrections Summary:</h3>
+                <pre className="whitespace-pre-wrap text-lg">{correctionsSummary}</pre>
+              </div>
+            ) : (
+              <p className="whitespace-pre-wrap text-lg">{text}</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Popup de definição */}
+      {/* Popup para definição */}
       {(isFetchingDefinition || popupContent) && (
-        <div 
+        <div
           ref={popupRef}
           className="absolute bg-[#A3A7DF] text-[#626081] p-3 rounded-2xl shadow-2xl flex items-center gap-2"
-          style={{ 
-            top: popupPosition.y + 25, 
-            left: popupPosition.x,
-            minWidth: "120px",
-            transform: "translateX(-50%)"
-          }}
+          style={{ top: popupPosition.y + 25, left: popupPosition.x, minWidth: "120px", transform: "translateX(-50%)" }}
         >
           {isFetchingDefinition ? (
             <>
@@ -365,7 +489,7 @@ export default function WritingPage() {
         </div>
       )}
 
-      {/* Botão único */}
+      {/* Botão de ação */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -374,9 +498,7 @@ export default function WritingPage() {
       >
         {status.toUpperCase() === "PERFECT" ? (
           <Link href="/">
-            <button 
-              className="mt-6 px-6 py-3 text-xl bg-[#B3BAFF] hover:bg-[#b3bbff9c] transition-all rounded-xl text-[white] shadow-md flex items-center justify-center gap-2"
-            >
+            <button className="mt-6 px-6 py-3 text-xl bg-[#B3BAFF] hover:bg-[#b3bbff9c] transition-all rounded-xl text-[white] shadow-md flex items-center justify-center gap-2">
               Home
             </button>
           </Link>
@@ -445,7 +567,8 @@ export default function WritingPage() {
           animation: pulse 2s infinite;
         }
         @keyframes pulse {
-          0%, 100% {
+          0%,
+          100% {
             opacity: 1;
           }
           50% {
