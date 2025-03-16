@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import StoryList from "@/components/StoryList";
-import UserHeader from "@/components/ui/UserHeader"; // Importa o UserHeader
+import UserHeader from "@/components/ui/UserHeader"; // Import the UserHeader
 
 const themes = [
   { name: "Fantasy", color: "bg-purple-600", image: "https://i.pinimg.com/736x/a5/22/f0/a522f04a5db103d457de9f5f7cc36f97.jpg" },
@@ -28,59 +29,92 @@ export default function ReadingHub() {
         <UserHeader />
       </header>
 
+      {/* Step #1: Title + subtitle (only when no theme is selected and popup is not open) */}
       {!selectedTheme && !showPopup && (
-        <div className="text-center mb-12">
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, ease: "easeOut" }}
+          className="text-center mb-12"
+        >
           <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-[#A8AFF5] to-[#b3bbff8c] bg-clip-text text-transparent">
             Read. Analyze. Reflect. Grow.
           </h1>
           <p className="text-xl text-[#a8aff57a]">
             Use reading as a bridge between theory and real-life action
           </p>
-        </div>
+        </motion.div>
       )}
 
+      {/* If no theme is selected, show the themes. Otherwise, show the selected theme's StoryList. */}
       {!selectedTheme ? (
-        <div className="w-full max-w-6xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {visibleThemes.map((theme) => (
-              <button
-                key={theme.name}
-                className="relative group rounded-2xl overflow-hidden shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                onClick={() => setSelectedTheme(theme.name)}
-              >
-                <img
-                  src={theme.image}
-                  alt={theme.name}
-                  className="w-full h-48 object-cover transition-all duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
-                  <span className="text-2xl font-bold text-white drop-shadow-md">
-                    {theme.name}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+        <>
+          {/* Step #2: Cards container */}
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, ease: "easeOut" }}
+            className="w-full max-w-6xl flex flex-col items-center"
+          >
+            <div className="w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {visibleThemes.map((theme) => (
+                  <button
+                    key={theme.name}
+                    className="relative group rounded-2xl overflow-hidden shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                    onClick={() => setSelectedTheme(theme.name)}
+                  >
+                    <img
+                      src={theme.image}
+                      alt={theme.name}
+                      className="w-full h-48 object-cover transition-all duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                      <span className="text-2xl font-bold text-white drop-shadow-md">
+                        {theme.name}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Step #3: "See more themes" button (if there are more themes) */}
           {hasMoreThemes && (
-            <div className="text-center mt-8">
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6, ease: "easeOut" }}
+              className="text-center mt-8"
+            >
               <button
                 onClick={() => setShowPopup(true)}
                 className="text-white rounded-xl px-6 py-3 bg-gradient-to-r bg-[#B3BAFF] hover:bg-[#b3bbffa4] transition-all text-lg font-semibold"
               >
                 See more themes
               </button>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </>
       ) : (
         <div className="w-full max-w-4xl">
           <button
             onClick={() => setSelectedTheme(null)}
             className="mb-6 px-5 py-3 bg-gradient-to-r bg-[#B3BAFF] rounded-2xl hover:bg-[#b3bbff9f] transition-all flex items-center gap-2 text-lg text-white"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
             </svg>
             Back to Genres
           </button>
@@ -91,6 +125,7 @@ export default function ReadingHub() {
         </div>
       )}
 
+      {/* Popup with all themes */}
       {showPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-2xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
@@ -100,7 +135,13 @@ export default function ReadingHub() {
                 onClick={() => setShowPopup(false)}
                 className="text-[#B3BAFF] hover:text-[#b3bbffa2] transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

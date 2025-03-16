@@ -15,176 +15,43 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import UserHeader from "@/components/ui/UserHeader"; // Importa o UserHeader
+import UserHeader from "@/components/ui/UserHeader";
+import CountdownTimer from "@/components/CountdownTimer"; // Importa o contador
 
 export default function WritingPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  // Chave única para status e timer baseada no ID ou e-mail do usuário
+  // Chaves únicas baseadas no ID ou email do usuário
   const userId = session?.user?.id || session?.user?.email;
   const storageKey = userId ? `writingStatus_${userId}` : "writingStatus";
   const timerKey = userId ? `writingTimer_${userId}` : "writingTimer";
 
-  const TIMER_DURATION = 10 * 60; // 10 minutos em segundos (substitua por 15 minutos se necessário)
+  const TIMER_DURATION = 10 * 60; // 10 minutos em segundos
 
   const [text, setText] = useState("");
   const [feedback, setFeedback] = useState(
     <>
-      Escreva um texto no campo à esquerda e clique em "Check Grammar".{" "}
-      <strong>O feedback aparecerá aqui.</strong>
+      Write a text in the left field and click "Check Grammar".{" "}
+      <strong>Feedback will appear here.</strong>
     </>
   );
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [popupContent, setPopupContent] = useState<{
-    word: string;
-    definition: string;
-  } | null>(null);
+  const [popupContent, setPopupContent] = useState<{ word: string; definition: string } | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [isFetchingDefinition, setIsFetchingDefinition] = useState(false);
   const [isFetchingIdea, setIsFetchingIdea] = useState(false);
   const [idea, setIdea] = useState<string | null>(null);
   const [isInactive, setIsInactive] = useState(false);
   const [showTextContent, setShowTextContent] = useState(false);
-  // Estado para armazenar o texto corrigido (pode ser diferente de 'text')
   const [correctedText, setCorrectedText] = useState("");
-  // Estado para armazenar um resumo das correções
   const [correctionsSummary, setCorrectionsSummary] = useState("");
-
-  // Estado do timer (em segundos)
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
-  // Estado para indicar que o tempo acabou
-  const [timeExpired, setTimeExpired] = useState(false);
-
-  // Estado para contar as ocorrências de "ALMOST_THERE"
   const [almostThereCount, setAlmostThereCount] = useState(0);
 
   const popupRef = useRef<HTMLDivElement>(null);
   const ideaPopupRef = useRef<HTMLDivElement>(null);
 
-  // Função fallback simples para correção do texto
-  function simpleTextCorrection(input: string): string {
-    const trimmed = input.trim();
-    const sentences = trimmed
-      .split(".")
-      .map((sentence) => sentence.trim())
-      .filter((sentence) => sentence.length > 0);
-    const correctedSentences = sentences.map((sentence) => {
-      return sentence.charAt(0).toUpperCase() + sentence.slice(1);
-    });
-    return correctedSentences.join(". ") + (trimmed.endsWith(".") ? "." : "");
-  }
-
-  // Ao montar o componente, carrega o timer salvo para hoje ou inicia com TIMER_DURATION
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const storedTimer = localStorage.getItem(timerKey);
-    if (storedTimer) {
-      try {
-        const data = JSON.parse(storedTimer);
-        if (data.date === today && typeof data.timeLeft === "number") {
-          setTimeLeft(data.timeLeft);
-        } else {
-          setTimeLeft(TIMER_DURATION);
-          localStorage.setItem(
-            timerKey,
-            JSON.stringify({ timeLeft: TIMER_DURATION, date: today })
-          );
-        }
-      } catch (e) {
-        setTimeLeft(TIMER_DURATION);
-        localStorage.setItem(
-          timerKey,
-          JSON.stringify({ timeLeft: TIMER_DURATION, date: today })
-        );
-      }
-    } else {
-      setTimeLeft(TIMER_DURATION);
-      localStorage.setItem(
-        timerKey,
-        JSON.stringify({ timeLeft: TIMER_DURATION, date: today })
-      );
-    }
-  }, [timerKey]);
-
-  // Decrementa o timer enquanto a página está ativa e atualiza o localStorage a cada segundo
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(interval);
-          localStorage.setItem(
-            timerKey,
-            JSON.stringify({ timeLeft: 0, date: new Date().toISOString().split("T")[0] })
-          );
-          setTimeExpired(true);
-          return 0;
-        }
-        const newTime = prevTime - 1;
-        localStorage.setItem(
-          timerKey,
-          JSON.stringify({ timeLeft: newTime, date: new Date().toISOString().split("T")[0] })
-        );
-        return newTime;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [router, timerKey]);
-
-  // Verifica se o usuário já completou o módulo de Writing hoje
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        if (data.status === "PERFECT" && data.date === today) {
-          setStatus("PERFECT");
-        } else if (data.date !== today) {
-          localStorage.removeItem(storageKey);
-        }
-      } catch (e) {
-        localStorage.removeItem(storageKey);
-      }
-    }
-  }, [storageKey]);
-
-  // Sincroniza alterações de status entre abas
-  useEffect(() => {
-    function handleStorageChange(e: StorageEvent) {
-      if (e.key === storageKey) {
-        const today = new Date().toISOString().split("T")[0];
-        if (e.newValue) {
-          try {
-            const data = JSON.parse(e.newValue);
-            if (data.status === "PERFECT" && data.date === today) {
-              setStatus("PERFECT");
-            } else {
-              setStatus("");
-            }
-          } catch (error) {
-            setStatus("");
-          }
-        } else {
-          setStatus("");
-        }
-      }
-    }
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [storageKey]);
-
-  // Reseta o status à meia-noite
-  useEffect(() => {
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const timeout = midnight.getTime() - now.getTime();
-    const timer = setTimeout(() => {
-      localStorage.removeItem(storageKey);
-      setStatus("");
-    }, timeout);
-    return () => clearTimeout(timer);
-  }, [status, storageKey]);
+  // Lógica de timer foi removida daqui. O componente CountdownTimer agora gerencia tudo.
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -216,7 +83,6 @@ export default function WritingPage() {
       setAlmostThereCount((prevCount) => {
         const newCount = prevCount + 1;
         if (newCount >= 30) {
-          // Ao atingir 30 ocorrências, atualiza para PERFECT e redireciona o usuário
           setStatus("PERFECT");
           localStorage.setItem(storageKey, JSON.stringify({ status: "PERFECT", date: today }));
           router.push("/");
@@ -314,9 +180,6 @@ export default function WritingPage() {
     }
   }
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen p-16 bg-[#ffffff]">
       {/* Header com informações do usuário */}
@@ -324,21 +187,9 @@ export default function WritingPage() {
         <UserHeader />
       </header>
 
-      {/* Timer e mensagem */}
-      <div className="absolute bottom-4 right-4 flex flex-col items-end space-y-2">
-        <div className="bg-[#B3BAFF] text-white px-3 py-1 rounded-xl shadow text-lg">
-          {minutes}:{seconds.toString().padStart(2, "0")}
-        </div>
-        {timeExpired && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="bg-[#B3BAFF] text-[#ffffff] px-3 py-2 rounded-xl text-xs font-medium shadow-sm"
-          >
-            ⏳ Time's up! Try a new skill.
-          </motion.div>
-        )}
+      {/* Renderiza o contador via componente */}
+      <div className="absolute bottom-4 right-4">
+        <CountdownTimer timerKey={timerKey} initialDuration={TIMER_DURATION} />
       </div>
 
       <motion.div
@@ -371,7 +222,7 @@ export default function WritingPage() {
                   setText(e.target.value);
                   setIsInactive(false);
                 }}
-                placeholder="Escreva pelo menos 2 linhas sobre qualquer assunto na língua que você está aprendendo."
+                placeholder="Write at least 2 lines about any subject in the language you are learning."
                 className="w-full h-[400px] p-6 text-2xl text-[#69678A] bg-[#B3BAFF] rounded-xl border-none shadow-2xl focus:ring-0 focus:outline-none placeholder:text-[#ffffff]"
                 disabled={status.toUpperCase() === "PERFECT"}
               />
@@ -408,7 +259,7 @@ export default function WritingPage() {
                 </motion.button>
               </div>
             </div>
-            {/* Overlay para PERFECT com botão "Show Text" */}
+            {/* Overlay para status PERFECT com botão "Show Text" */}
             {status.toUpperCase() === "PERFECT" && (
               <div className="absolute inset-0 flex items-center justify-center z-10 space-x-4">
                 <FaCheckCircle className="text-[#53ff1f] w-16 h-16 animate-pulse pointer-events-none" />
@@ -431,29 +282,23 @@ export default function WritingPage() {
             {status ? (
               <>
                 {getFeedbackTitle()}
-                <p
-                  className="text-center text-lg mt-4"
-                  dangerouslySetInnerHTML={{ __html: feedback }}
-                />
+                <p className="text-center text-lg mt-4" dangerouslySetInnerHTML={{ __html: feedback }} />
               </>
             ) : (
               <p className="text-center text-lg text-[#ffffff]">
-                Escreva um texto no campo à esquerda e clique em "Check Grammar".{" "}
-                <strong>O feedback aparecerá aqui.</strong>
+                Write a text in the left field and click "Check Grammar".{" "}
+                <strong>Feedback will appear here.</strong>
               </p>
             )}
           </div>
         </div>
       </motion.div>
 
-      {/* Modal para exibir o texto corrigido e resumo das correções */}
+      {/* Modal para exibir o texto corrigido e resumo de correções */}
       {showTextContent && (
         <div className="fixed inset-0 flex items-center justify-center bg-[black] bg-opacity-70 z-50">
           <div className="bg-[#ffffff] text-[#B3BAFF] p-8 rounded-2xl shadow-xl max-w-lg w-full relative animate-fadeIn">
-            <button
-              onClick={() => setShowTextContent(false)}
-              className="absolute top-4 right-4 text-[#B3BAFF] hover:text-[#b3bbffa2] transition-colors"
-            >
+            <button onClick={() => setShowTextContent(false)} className="absolute top-4 right-4 text-[#B3BAFF] hover:text-[#b3bbffa2] transition-colors">
               <FaTimes className="w-6 h-6" />
             </button>
             <h2 className="text-2xl font-bold mb-4">Your Text:</h2>
@@ -469,7 +314,7 @@ export default function WritingPage() {
         </div>
       )}
 
-      {/* Popup para definição */}
+      {/* Popup para definição de palavras */}
       {(isFetchingDefinition || popupContent) && (
         <div
           ref={popupRef}
@@ -520,7 +365,7 @@ export default function WritingPage() {
         )}
       </motion.div>
 
-      {/* Estilos globais */}
+      {/* Global styles */}
       <style jsx global>{`
         .highlight {
           color: #946dff;

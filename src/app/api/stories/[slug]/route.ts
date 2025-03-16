@@ -7,7 +7,8 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
   await dbConnect();
 
   try {
-    const story = await Story.findOne({ slug: params.slug });
+    const resolvedParams = await Promise.resolve(params);
+    const story = await Story.findOne({ slug: resolvedParams.slug });
 
     if (!story) {
       return NextResponse.json({ error: "Story not found" }, { status: 404 });

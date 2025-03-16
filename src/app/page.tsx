@@ -18,7 +18,15 @@ type SkillType = {
   image: string;
 };
 
-function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillType; disabled?: boolean; countdown?: string }) {
+function SkillCard({
+  skill,
+  disabled = false,
+  countdown = "",
+}: {
+  skill: SkillType;
+  disabled?: boolean;
+  countdown?: string;
+}) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -26,29 +34,29 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!cardRef.current || !glowRef.current) return;
-  
+
       const rect = cardRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-  
+
       glowRef.current.style.transform = `translate(${x - 80}px, ${y - 80}px)`;
     };
-  
+
     const handleMouseEnter = () => {
       setIsHovered(true);
     };
-  
+
     const handleMouseLeave = () => {
       setTimeout(() => setIsHovered(false), 0);
     };
-  
+
     const card = cardRef.current;
     if (card) {
       card.addEventListener("mousemove", handleMouseMove);
       card.addEventListener("mouseenter", handleMouseEnter);
       card.addEventListener("mouseleave", handleMouseLeave);
     }
-  
+
     return () => {
       if (card) {
         card.removeEventListener("mousemove", handleMouseMove);
@@ -60,7 +68,9 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
 
   const cardContent = (
     <div
-      className={`p-6 backdrop-blur-lg rounded-xl border border-[#b3bbff33] shadow-glass hover:bg-[#714aff09] transition-all duration-300 text-left min-h-[320px] flex flex-col overflow-hidden ${disabled ? "filter blur-sm" : ""}`}
+      className={`p-6 backdrop-blur-lg rounded-xl border border-[#b3bbff33] shadow-glass hover:bg-[#714aff09] transition-all duration-300 text-left min-h-[320px] flex flex-col overflow-hidden ${
+        disabled ? "filter blur-sm" : ""
+      }`}
       ref={cardRef}
     >
       <div
@@ -82,12 +92,15 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
   );
 
   if (disabled) {
+    // Purple overlay with checkmark and countdown
     return (
       <div className="relative group block">
         {cardContent}
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#A8AFF5] bg-opacity-10 rounded-xl">
           <FaCheckCircle className="text-[#A8AFF5] w-16 h-16 animate-pulse" />
-          <p className="text-[#A8AFF5] mt-2">Completed for today. Try again in {countdown}</p>
+          <p className="text-[#A8AFF5] mt-2">
+            Completed for today. Try again in {countdown}
+          </p>
         </div>
       </div>
     );
@@ -103,9 +116,15 @@ function SkillCard({ skill, disabled = false, countdown = "" }: { skill: SkillTy
 export default function Home() {
   const { data: session } = useSession();
   const [showSettings, setShowSettings] = useState(false);
+
+  // States to lock writing and reading
   const [writingLocked, setWritingLocked] = useState(false);
+  const [readingLocked, setReadingLocked] = useState(false);
+
+  // Shared countdown for midnight
   const [countdown, setCountdown] = useState("");
 
+  // Function to compute the daily phrase index
   const getDailyPhraseIndex = () => {
     const today = new Date();
     const dayOfYear = Math.floor(
@@ -161,9 +180,9 @@ export default function Home() {
     },
   ];
 
-  // Verifica se o módulo Writing foi concluído hoje para o usuário logado
+  // Check if Writing is locked for the current user
   useEffect(() => {
-    function updateLockStatus() {
+    function updateWritingLockStatus() {
       if (session && session.user) {
         const userId = session.user.id || session.user.email;
         const storageKey = `writingStatus_${userId}`;
@@ -187,12 +206,45 @@ export default function Home() {
         setWritingLocked(false);
       }
     }
-    updateLockStatus();
-    window.addEventListener("storage", updateLockStatus);
-    return () => window.removeEventListener("storage", updateLockStatus);
+    updateWritingLockStatus();
+    window.addEventListener("storage", updateWritingLockStatus);
+    return () => window.removeEventListener("storage", updateWritingLockStatus);
   }, [session]);
 
-  // Atualiza o contador regressivo para a meia-noite
+  // Check if Reading is locked for the current user
+  useEffect(() => {
+    function updateReadingLockStatus() {
+      if (session && session.user) {
+        const userId = session.user.id || session.user.email;
+        const readingKey = `readingStatus_${userId}`;
+        const storedReading = localStorage.getItem(readingKey);
+        const today = new Date().toISOString().split("T")[0];
+
+        if (storedReading) {
+          try {
+            const data = JSON.parse(storedReading);
+            // We expect data = { status: "DONE", date: "YYYY-MM-DD" }
+            if (data.status === "DONE" && data.date === today) {
+              setReadingLocked(true);
+            } else {
+              setReadingLocked(false);
+            }
+          } catch (error) {
+            setReadingLocked(false);
+          }
+        } else {
+          setReadingLocked(false);
+        }
+      } else {
+        setReadingLocked(false);
+      }
+    }
+    updateReadingLockStatus();
+    window.addEventListener("storage", updateReadingLockStatus);
+    return () => window.removeEventListener("storage", updateReadingLockStatus);
+  }, [session]);
+
+  // Update countdown to midnight
   useEffect(() => {
     function updateCountdown() {
       const now = new Date();
@@ -201,7 +253,11 @@ export default function Home() {
       const hours = Math.floor(diff / 1000 / 60 / 60);
       const minutes = Math.floor((diff / 1000 / 60) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
-      setCountdown(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`);
+      setCountdown(
+        `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+      );
     }
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
@@ -228,8 +284,10 @@ export default function Home() {
           </>
         ) : (
           <>
-            <span className="text-[#A8AFF5] font-medium">Connected as: {session.user?.name}</span>
-            <span className="h-[20px] w-[2px] bg-[#a8aff54d]"></span>
+            <span className="text-[#A8AFF5] font-medium">
+              Connected as: {session.user?.name}
+            </span>
+            <span className="h-[20px] w-[2px] bg-[#a8aff54d]" />
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 bg-[#A8AFF5] text-white rounded-full shadow-md transition-all duration-300 hover:bg-[#714aff44]"
@@ -248,13 +306,34 @@ export default function Home() {
 
       <div className="max-w-7xl w-full px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-7xl">
-          {skills.map((skill) =>
-            skill.name === "Writing" && writingLocked ? (
-              <SkillCard key={skill.id} skill={skill} disabled={true} countdown={countdown} />
-            ) : (
-              <SkillCard key={skill.id} skill={skill} />
-            )
-          )}
+          {skills.map((skill) => {
+            // Writing locked check
+            if (skill.name === "Writing" && writingLocked) {
+              return (
+                <SkillCard
+                  key={skill.id}
+                  skill={skill}
+                  disabled={true}
+                  countdown={countdown}
+                />
+              );
+            }
+
+            // Reading locked check
+            if (skill.name === "Reading" && readingLocked) {
+              return (
+                <SkillCard
+                  key={skill.id}
+                  skill={skill}
+                  disabled={true}
+                  countdown={countdown}
+                />
+              );
+            }
+
+            // Normal skill card
+            return <SkillCard key={skill.id} skill={skill} />;
+          })}
         </div>
       </div>
 
