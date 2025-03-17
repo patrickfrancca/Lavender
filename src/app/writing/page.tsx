@@ -17,6 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import UserHeader from "@/components/ui/UserHeader";
 import CountdownTimer from "@/components/CountdownTimer"; // Importa o contador
+import BackButton from "@/components/BackButton"; // Importa o componente "Voltar"
 
 export default function WritingPage() {
   const { data: session } = useSession();
@@ -82,7 +83,7 @@ export default function WritingPage() {
     } else if (newStatus === "ALMOST_THERE") {
       setAlmostThereCount((prevCount) => {
         const newCount = prevCount + 1;
-        if (newCount >= 30) {
+        if (newCount >= 2) {
           setStatus("PERFECT");
           localStorage.setItem(storageKey, JSON.stringify({ status: "PERFECT", date: today }));
           router.push("/");
@@ -182,6 +183,11 @@ export default function WritingPage() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen p-16 bg-[#ffffff]">
+      {/* Botão "Voltar" utilizando o componente BackButton */}
+      <div className="absolute top-4 left-4 z-50">
+        <BackButton destination="/"  label="Return to Home"/>
+      </div>
+
       {/* Header com informações do usuário */}
       <header className="absolute top-4 right-4 z-50">
         <UserHeader />
@@ -356,10 +362,10 @@ export default function WritingPage() {
             {isLoading ? (
               <>
                 <div className="w-6 h-6 border-4 border-[white] border-t-transparent rounded-full animate-spin"></div>
-                <span>Generating feedback</span>
+                <strong>Generating feedback</strong>
               </>
             ) : (
-              "Check Grammar"
+              <strong>Check Grammar</strong>
             )}
           </button>
         )}

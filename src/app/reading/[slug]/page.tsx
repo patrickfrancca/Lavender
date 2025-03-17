@@ -6,6 +6,9 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import CountdownTimer from "@/components/CountdownTimer"; // Importa o componente do contador
+import UserHeader from "@/components/ui/UserHeader"; // Importa o componente do cabeçalho do usuário
+import BackButton from "@/components/BackButton"; // Importa o novo componente de botão "Voltar"
+import { motion } from "framer-motion";
 
 interface Story {
   title: string;
@@ -24,12 +27,9 @@ const backgroundSounds: { [key: string]: string[] } = {
     "/audio/lastdays.mp3",
     "/audio/horror.mp3",
   ],
-  default: ["/audio/arabic.mp3", "/audio/intothedarkness.mp3"],
+  default: ["", ""],
 };
 
-/**
- * Custom hook para gerenciar o áudio de fundo.
- */
 function useBackgroundAudio(
   theme: string,
   isPlaying: boolean,
@@ -88,6 +88,28 @@ function useBackgroundAudio(
   return audioRef.current;
 }
 
+// Componente para o ícone (seta) utilizado em botões
+const ArrowIcon = ({
+  rotate = false,
+  className = "",
+}: {
+  rotate?: boolean;
+  className?: string;
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={`h-5 w-5 ${className} ${rotate ? "transform rotate-180" : ""}`}
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 const Popup = ({
   definition,
   position,
@@ -116,12 +138,12 @@ const Popup = ({
         position: "fixed",
         top: position.y + 20,
         left: position.x,
-        background: "white",
+        background: "rgba(255,255,255,0.95)",
         padding: "16px",
         borderRadius: "12px",
         boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.15)",
         zIndex: 1000,
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Poppins', sans-serif",
         maxWidth: "280px",
         transform: "translateX(-50%)",
         transition: "all 0.2s ease-out",
@@ -160,7 +182,7 @@ const Popup = ({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors shrink-0"
+              className="text-gray-500 hover:text-[#8080809d] transition-colors shrink-0"
             >
               <svg
                 className="w-5 h-5"
@@ -195,9 +217,7 @@ export default function StoryPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [definition, setDefinition] = useState<string | null>(null);
   const [definitionWord, setDefinitionWord] = useState<string | null>(null);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(
-    null
-  );
+  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
   const [definitionCount, setDefinitionCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -217,13 +237,13 @@ export default function StoryPage() {
   const [soundKey, setSoundKey] = useState(0);
   useBackgroundAudio(audioTheme, isPlaying, volume, soundKey);
 
-  // Contador para leitura: cada página tem seu próprio timer salvo por usuário.
-  // Usamos uma chave única (ex: "readingTimer_<user>") para salvar o valor.
   const TIMER_DURATION = 10 * 60; // 10 minutos em segundos
   const userId = session?.user?.id || session?.user?.email;
   const timerKey = userId ? `readingTimer_${userId}` : "readingTimer";
 
-  // Busca a história com base no slug
+  // Estado para o modo leitura (página amarelada)
+  const [readingMode, setReadingMode] = useState(false);
+
   useEffect(() => {
     if (!slug) return;
     const fetchStory = async () => {
@@ -241,11 +261,10 @@ export default function StoryPage() {
     fetchStory();
   }, [slug]);
 
-  // Define o contador de definições com base nos dados do usuário
   useEffect(() => {
     if (status === "loading") return;
     if (!session) return;
-    const userKey = session.user.id || session.user.email;
+    const userKey = session.user?.id || session.user?.email;
     const today = new Date().toISOString().slice(0, 10);
     const storedDate = localStorage.getItem(`definitionDate_${userKey}`);
     const storedCount = localStorage.getItem(`definitionCount_${userKey}`);
@@ -294,7 +313,7 @@ export default function StoryPage() {
 
   const handleWordClick = async (word: string, event: React.MouseEvent) => {
     if (status === "loading" || !session) return;
-    const userKey = session.user.id || session.user.email;
+    const userKey = session.user?.id || session.user?.email;
     setDefinitionWord(word);
     setPopupPosition({ x: event.clientX, y: event.clientY });
     if (definitionCount >= MAX_DEFINITIONS_PER_DAY) {
@@ -344,17 +363,14 @@ export default function StoryPage() {
 
   const handleFinishReading = () => {
     setIsFinished(true);
-
     if (!session) return;
-    const userId = session.user.id || session.user.email;
-    const readingKey = `readingStatus_${userId}`;
+    const userKey = session.user?.id || session.user?.email;
+    const readingKey = `readingStatus_${userKey}`;
     const today = new Date().toISOString().split("T")[0];
-
     localStorage.setItem(
       readingKey,
       JSON.stringify({ status: "DONE", date: today })
     );
-
     setTimeout(() => {
       router.push("/");
     }, 1000);
@@ -362,9 +378,9 @@ export default function StoryPage() {
 
   if (loading)
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#E5D8B2]">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F7F9FF]">
         <svg
-          className="animate-spin h-12 w-12 text-[#612b16]"
+          className="animate-spin h-12 w-12 text-[#B3BAFF]"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -389,7 +405,7 @@ export default function StoryPage() {
 
   if (!story)
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#E5D8B2]">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F7F9FF]">
         <svg
           className="h-12 w-12 text-red-500"
           xmlns="http://www.w3.org/2000/svg"
@@ -408,25 +424,47 @@ export default function StoryPage() {
     );
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#E5D8B2] p-6 overflow-hidden relative">
-      {/* Contador para leitura – salvo por usuário e independente para esta página */}
+    <main
+      className="min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden relative"
+      style={{ backgroundColor: readingMode ? "#fff9e6" : "#F7F9FF" }}
+    >
+      {/* Botão "Voltar" utilizando o componente BackButton */}
+      <div className="absolute top-4 left-4 z-50">
+        <BackButton destination="/reading" />
+      </div>
+
+      {/* UserHeader posicionado no canto superior direito */}
+      <div className="absolute top-4 right-4 z-50">
+        <UserHeader />
+      </div>
+
+      {/* Contador para leitura – posicionado no canto inferior direito */}
       <div className="absolute bottom-4 right-4">
         <CountdownTimer timerKey={timerKey} initialDuration={TIMER_DURATION} />
       </div>
 
-      <article className="w-full max-w-5xl bg-[#f4e8c1] border-l-8 border-[#612b16] rounded-r-lg shadow-lg p-8 relative old-book">
+      {/* Motion envolta do conteúdo da história */}
+      <motion.article
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, ease: "easeOut" }}
+        className="notebook w-full max-w-5xl rounded-lg shadow-xl p-8 relative"
+        style={{ backgroundColor: readingMode ? "#fff9e6" : "white" }}
+      >
         {!isFinished && (
           <button
             onClick={handleFinishReading}
-            className="absolute top-4 right-4 px-4 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition"
+            className={`absolute top-4 right-4 px-4 py-2 bg-[#B3BAFF] text-white font-semibold rounded-xl transition hover:bg-[#b3bbffad] ${
+              currentPage === totalPages - 1 ? "animate-float" : ""
+            }`}
           >
             Finish Reading
           </button>
         )}
         {isFinished && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50">
             <svg
-              className="w-20 h-20 text-green-600 animate-bounce"
+              className="w-20 h-20 text-[#B3BAFF] animate-bounce"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -443,12 +481,12 @@ export default function StoryPage() {
         )}
         <header className="mb-6 text-center">
           <h1 className="text-4xl font-bold text-gray-800">{story.title}</h1>
-          <p className="mt-2 text-xl text-gray-700 text-center description">
+          <p className="description mt-2 text-xl text-gray-600 text-center">
             {story.description}
           </p>
         </header>
         <div className="text-center mb-6">
-          <hr className="border-t-2 border-[#854a2227] w-1/2 mx-auto" />
+          <hr className="border-t-2 border-[#B3BAFF] w-1/2 mx-auto" />
         </div>
         <div className="h-[600px] overflow-hidden relative">
           <section
@@ -471,37 +509,48 @@ export default function StoryPage() {
             ))}
           </section>
         </div>
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-between mt-6 relative">
           <button
             onClick={handlePreviousPage}
             disabled={currentPage === 0}
-            className="px-4 py-2 bg-[#612b16] text-white font-semibold rounded hover:bg-[#8c3b24] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-4 py-2 bg-[#B3BAFF] text-white font-semibold rounded-xl hover:bg-[#a0a5ff8e] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ width: "200px" }}
           >
-            ← Previous Page
+            <ArrowIcon className="mr-2" />
+            <span>Previous Page</span>
           </button>
           {currentPage < totalPages - 1 ? (
             <button
               onClick={handleNextPage}
-              className="px-4 py-2 bg-[#612b16] text-white font-semibold rounded hover:bg-[#8c3b24] transition"
+              className="flex items-center px-4 py-2 bg-[#B3BAFF] text-white font-semibold rounded-xl hover:bg-[#a0a5ff91] transition"
+              style={{ width: "150px" }}
             >
-              Next Page →
+              <span>Next Page</span>
+              <ArrowIcon rotate className="ml-2" />
             </button>
           ) : (
-            <div className="text-center">
-              <p className="text-gray-600">End of story</p>
+            <div className="absolute top-1/2 right-4 transform -translate-y-1/2">
+              <p className="handwritten text-4xl">End of story.</p>
             </div>
           )}
         </div>
         <div className="flex items-center justify-center mt-4 space-x-4">
+          {/* Botão para alternar o modo leitura */}
+          <button
+            onClick={() => setReadingMode(!readingMode)}
+            className="px-4 py-2 bg-[#f0e65c] text-white font-semibold rounded-xl hover:bg-[#f0e65c8f] transition"
+          >
+            {readingMode ? "Switch to Normal Mode" : "Switch to Reading Mode"}
+          </button>
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="px-4 py-2 bg-[#612b16] text-white font-semibold rounded hover:bg-[#8c3b24] transition"
+            className="px-4 py-2 bg-[#B3BAFF] text-white font-semibold rounded-xl hover:bg-[#a0a5ff86] transition"
           >
             {isPlaying ? "Sound ON" : "Sound OFF"}
           </button>
           <button
             onClick={() => setSoundKey((prev) => prev + 1)}
-            className="px-4 py-2 bg-[#612b16] text-white font-semibold rounded hover:bg-[#8c3b24] transition"
+            className="px-4 py-2 bg-[#B3BAFF] text-white font-semibold rounded-xl hover:bg-[#b3bbff93] transition"
           >
             Change Sound
           </button>
@@ -534,11 +583,9 @@ export default function StoryPage() {
               step="0.01"
               value={volume}
               onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="w-32 h-2 rounded-full appearance-none cursor-pointer bg-gray-300"
+              className="w-32 h-2 rounded-full appearance-none cursor-pointer bg-[gray-300]"
               style={{
-                background: `linear-gradient(to right, #612b16 ${volume * 100}%, #e5e7eb ${
-                  volume * 100
-                }%)`,
+                background: `linear-gradient(to right, #B3BAFF ${volume * 100}%, #e5e7eb ${volume * 100}%)`,
               }}
             />
           </div>
@@ -558,58 +605,79 @@ export default function StoryPage() {
             maxDefinitions={MAX_DEFINITIONS_PER_DAY}
           />
         )}
-      </article>
-      <style jsx>{`
+      </motion.article>
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Corinthia:wght@400;700&display=swap");
+
         .drop-cap::first-letter {
-          font-family: "Georgia", serif;
-          font-size: 4rem;
+          font-family: "Corinthia", cursive;
+          font-size: 5rem;
           font-weight: bold;
           float: left;
           margin-right: 12px;
           line-height: 1;
-          color: #333;
+          color: #B3BAFF;
         }
         p:not(.description) {
           text-align: justify;
+          font-family: "Poppins", sans-serif;
         }
-        .old-book {
-          background: linear-gradient(to bottom, #f4e8c1, #e8d9a9 50%, #f4e8c1);
-          border: 2px solid #d1b894;
-          border-left: 8px solid #612b16;
-          border-radius: 0 10px 10px 0;
-          box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1),
-            5px 0 10px -5px rgba(0, 0, 0, 0.2),
-            0 5px 15px rgba(0, 0, 0, 0.3);
+        .notebook {
+          background: white;
+          border-left: 8px solid #B3BAFF;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
           position: relative;
+          padding: 2rem;
+          font-family: "Poppins", sans-serif;
         }
-        .old-book::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACJJREFUKFNjZICC0/8/Mvj//z8DDAwM/MfAxEB8HgzG/////wD1vQv5jX8eOQAAAABJRU5ErkJggg==') repeat;
-          opacity: 0.05;
-          pointer-events: none;
+        main {
+          background-color: #F7F9FF;
         }
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-5px);
+          }
+        }
+        .animate-float {
+          animation: float 2s infinite ease-in-out;
+        }
+        .handwritten {
+          font-family: "Corinthia", cursive !important;
+          font-size: 2rem;
+          color: #B3BAFF;
+          display: inline-block;
+          white-space: nowrap;
+          overflow: hidden;
+          animation: typing 3s, step-end ;
+        }
+        @keyframes typing {
+          from { width: 0; }
+          to { width: 100%; }
+        }
+        @keyframes blink-caret {
+          from, to { border-color: transparent; }
+          50% { border-color: #B3BAFF; }
+        }
+
+        input[type="range"] {
+          -webkit-appearance: none; /* Remove o estilo padrão no Chrome/Safari */
+          width: 100%;
+          background: transparent;
+        }
+
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          height: 16px;
-          width: 16px;
+          appearance: none;
+          background: #B3BAFF; /* Cor desejada */
           border-radius: 50%;
-          background: #612b16;
+          width: 20px;
+          height: 20px;
           cursor: pointer;
-          margin-top: -7px;
-          box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-        }
-        input[type="range"]::-moz-range-thumb {
-          height: 16px;
-          width: 16px;
-          border-radius: 50%;
-          background: #612b16;
-          cursor: pointer;
-          box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
         }
       `}</style>
     </main>
